@@ -114,3 +114,7 @@ It includes:
 * `requirements.txt` (with the Gunicorn web server included)
 * `build.sh` (a script to automatically install dependencies and setup the database)
 * `render.yaml` (an infrastructure-as-code file for one-click Render deployments)
+
+Here's the link `https://product-customizer-2kba.onrender.com/`
+
+Note: Currently the print area and coordinates are set random so the design will be probably out of the screen. You can adjust the size and change the position manually to get it on the shirt/cap. Also I couldn't find shadows to add and you can add it in the admin tab. I will fix all of this very very soon🙏
