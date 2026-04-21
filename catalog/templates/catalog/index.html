@@ -291,6 +291,44 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 12px hsla(260, 100%, 65%, 0.3);
         }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .product-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .product-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent);
+        }
+        .product-card.selected {
+            border-color: var(--accent);
+            background: hsla(260, 100%, 65%, 0.15);
+            box-shadow: 0 0 10px hsla(260, 100%, 65%, 0.4);
+        }
+        .product-card img {
+            width: 100%;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            background: rgba(0,0,0,0.3);
+        }
+        .product-card span {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -304,9 +342,9 @@
         <aside class="panel tools">
             <div class="tool-section">
                 <h2>1. Select Product</h2>
-                <select id="product-select">
-                    <option value="">Loading products...</option>
-                </select>
+                <div id="product-grid" class="product-grid">
+                    <div style="color: var(--text-muted); font-size: 0.9rem;">Loading products...</div>
+                </div>
                 <select id="view-select" style="margin-top: 10px; display: none;">
                 </select>
             </div>
@@ -374,7 +412,7 @@
         let designURL = null;
 
         // Elements
-        const prodSelect = document.getElementById('product-select');
+        const productGrid = document.getElementById('product-grid');
         const viewSelect = document.getElementById('view-select');
         const dropzone = document.getElementById('dropzone');
         const fileInput = document.getElementById('file-input');
@@ -395,21 +433,34 @@
                 const res = await fetch(API_URL + 'products/');
                 products = await res.json();
                 
-                prodSelect.innerHTML = '<option value="">Select a product...</option>';
+                productGrid.innerHTML = '';
                 products.forEach(p => {
-                    const opt = document.createElement('option');
-                    opt.value = p.id;
-                    opt.textContent = p.name;
-                    prodSelect.appendChild(opt);
+                    const card = document.createElement('div');
+                    card.className = 'product-card';
+                    card.onclick = () => selectProduct(p.id, card);
+                    
+                    if (p.thumbnail) {
+                        const img = document.createElement('img');
+                        img.src = p.thumbnail;
+                        card.appendChild(img);
+                    }
+                    
+                    const text = document.createElement('span');
+                    text.textContent = p.name;
+                    card.appendChild(text);
+                    
+                    productGrid.appendChild(card);
                 });
             } catch (e) {
                 console.error(e);
-                prodSelect.innerHTML = '<option value="">Error loading products</option>';
+                productGrid.innerHTML = '<div style="color: red; font-size: 0.9rem;">Error loading products</div>';
             }
         }
 
-        prodSelect.addEventListener('change', (e) => {
-            const pid = parseInt(e.target.value);
+        function selectProduct(pid, cardElement) {
+            document.querySelectorAll('.product-card').forEach(c => c.classList.remove('selected'));
+            cardElement.classList.add('selected');
+
             currentProduct = products.find(p => p.id === pid);
             if (currentProduct && currentProduct.views.length > 0) {
                 viewSelect.style.display = 'block';
@@ -425,7 +476,7 @@
                 viewSelect.style.display = 'none';
                 clearStage();
             }
-        });
+        }
 
         viewSelect.addEventListener('change', (e) => {
             const vid = parseInt(e.target.value);
