@@ -27,7 +27,7 @@ def create_displacement_map(product_crop: np.ndarray) -> tuple:
     sobely = cv2.Sobel(gray_smooth, cv2.CV_32F, 0, 1, ksize=3)
     magnitude = np.sqrt(sobelx**2 + sobely**2)
     
-    magnitude = (magnitude / (magnitude.max() + 1e-5) * 150).astype(np.float32)
+    magnitude = (magnitude / (magnitude.max() + 1e-5) * 50).astype(np.float32)
     magnitude = np.clip(magnitude, -5, 5)
     
     mapx = np.zeros((h, w), dtype=np.float32)
@@ -172,18 +172,16 @@ def render_design_on_product(
     product_crop = product_image[y1:y2, x1:x2].copy()
     
     # 2. Fabric conformation (wrinkles)
-    if mapx is None or mapy is None:
-        mapx, mapy = create_displacement_map(product_crop)
-        
-    if mapx.shape[:2] != design_warped.shape[:2]:
-        mapx = cv2.resize(mapx, (width, height))
-        mapy = cv2.resize(mapy, (width, height))
-        
-    design_warped = apply_wrinkle_displacement(design_warped, mapx, mapy)
+    if mapx is not None and mapy is not None:
+        if mapx.shape[:2] != design_warped.shape[:2]:
+            mapx = cv2.resize(mapx, (width, height))
+            mapy = cv2.resize(mapy, (width, height))
+        design_warped = apply_wrinkle_displacement(design_warped, mapx, mapy)
+
     
     # 3. Realistic blending (shadows and edges)
     if shadow_map is None:
-        shadow_map = extract_shadow_map(product_crop, strength=0.25)
+        shadow_map = extract_shadow_map(product_crop, strength=0.08)
     design_shadowed = apply_shadow_blend(design_warped, shadow_map)
     design_final = apply_edge_mask(design_shadowed)
     
