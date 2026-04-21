@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Product.objects.all().prefetch_related('views', 'views__print_area')
+    queryset = Product.objects.all().prefetch_related('views')
     serializer_class = ProductSerializer
 
 class RenderPreviewView(APIView):
