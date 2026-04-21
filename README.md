@@ -50,6 +50,7 @@ The system enforces a strict separation of privileges using Django's built-in se
 ### 1. Admin Authorization (Session-Based)
 The backend dashboard (`/admin`) is completely locked down. It utilizes **Django's Session Authentication**. 
 * Only users with `is_staff` and `is_superuser` flags in the database can access this portal. 
+* **Users & Groups Management:** The Superuser can use the built-in Django Auth panel to create new sub-admin accounts, set their passwords, and assign them to specific Groups with granular permissions (e.g., allowing a user to add Products but preventing them from deleting Print Areas).
 * This ensures that only authorized store owners can add products, delete products, or modify the critical `PrintArea` coordinate boundaries.
 * It is protected by CSRF (Cross-Site Request Forgery) tokens to prevent malicious hijacking.
 
