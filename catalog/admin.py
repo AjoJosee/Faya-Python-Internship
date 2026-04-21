@@ -21,3 +21,5 @@ class ProductViewAdmin(admin.ModelAdmin):
 @admin.register(PrintArea)
 class PrintAreaAdmin(admin.ModelAdmin):
     list_display = ('product_view', 'x', 'y', 'width', 'height')
+    class Media:
+        js = ('admin/js/print_area_selector.js',)
