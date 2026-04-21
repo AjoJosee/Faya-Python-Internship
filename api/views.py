@@ -5,7 +5,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.http import HttpResponse
 from catalog.models import Product, ProductView
 from .serializers import ProductSerializer
-from engine.processor import render_design_on_product
+from engine.processor import render_design_on_product, detect_perspective
 import cv2
 import numpy as np
 
@@ -28,6 +28,7 @@ class RenderPreviewView(APIView):
             width = int(float(request.data.get('width', 100)))
             height = int(float(request.data.get('height', 100)))
             rotation = float(request.data.get('rotation', 0.0))
+            auto_perspective = request.data.get('auto_perspective', 'false').lower() == 'true'
         except (ValueError, TypeError):
             return Response({"error": "Invalid numerical parameters."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -55,6 +56,17 @@ class RenderPreviewView(APIView):
         # Ensure design has alpha channel
         if design_img.shape[2] == 3:
             design_img = cv2.cvtColor(design_img, cv2.COLOR_BGR2BGRA)
+
+        # Auto perspective detection if requested
+        if auto_perspective:
+            # Get crop of print area to analyze
+            try:
+                pa = product_view.print_area
+                crop = product_img[pa.y:pa.y+pa.height, pa.x:pa.x+pa.width]
+                detected_angle = detect_perspective(crop)
+                rotation = detected_angle
+            except Exception:
+                pass # fallback to provided rotation
 
         # Render
         try:

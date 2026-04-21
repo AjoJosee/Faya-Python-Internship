@@ -132,6 +132,24 @@ def precalculate_product_maps(product_crop: np.ndarray):
     shadow_map = extract_shadow_map(product_crop)
     return mapx, mapy, shadow_map
 
+def detect_perspective(image: np.ndarray) -> float:
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    edges = cv2.Canny(blurred, 50, 150)
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    if not contours:
+        return 0.0
+        
+    largest_contour = max(contours, key=cv2.contourArea)
+    rect = cv2.minAreaRect(largest_contour)
+    angle = rect[2]
+    
+    if angle > 45:
+        angle = angle - 90
+        
+    return -angle
+
 def render_design_on_product(
     product_image: np.ndarray,
     design_image: np.ndarray,
@@ -156,8 +174,8 @@ def render_design_on_product(
     # 2. Fabric conformation (wrinkles)
     if mapx is not None and mapy is not None:
         if mapx.shape[:2] != design_warped.shape[:2]:
-            mapx = cv2.resize(mapx, (x2-x1, y2-y1))
-            mapy = cv2.resize(mapy, (x2-x1, y2-y1))
+            mapx = cv2.resize(mapx, (width, height))
+            mapy = cv2.resize(mapy, (width, height))
         design_warped = apply_wrinkle_displacement(design_warped, mapx, mapy)
     
     # 3. Realistic blending (shadows and edges)

@@ -51,6 +51,7 @@
             letter-spacing: -0.5px;
             background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -164,11 +165,13 @@
 
         input[type=range] {
             -webkit-appearance: none;
+            appearance: none;
             width: 100%;
             background: transparent;
         }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
+            appearance: none;
             height: 16px;
             width: 16px;
             border-radius: 50%;
@@ -241,6 +244,53 @@
             color: var(--text-muted);
         }
 
+        .gallery-area {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.5rem;
+        }
+        .gallery-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            align-items: center;
+            background: hsla(220, 15%, 15%, 0.5);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            width: 160px;
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 140px;
+            object-fit: contain;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid hsla(0,0%,100%,0.1);
+        }
+        .download-btn {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 0.6rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            text-decoration: none;
+            text-align: center;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+        .download-btn:hover {
+            background: var(--accent);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px hsla(260, 100%, 65%, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -287,6 +337,10 @@
                     <label><span>Y Position</span> <span id="y-val">0</span></label>
                     <input type="range" id="y-slider" min="-500" max="500" value="0">
                 </div>
+                <div class="checkbox-group" style="margin-top: 15px;">
+                    <input type="checkbox" id="auto-perspective" checked>
+                    <label for="auto-perspective">Auto-detect perspective</label>
+                </div>
             </div>
 
             <button id="render-btn" disabled>
@@ -295,12 +349,17 @@
             </button>
         </aside>
 
-        <section class="panel canvas-area">
-            <div class="stage-container" id="stage">
+        <section class="panel canvas-area" style="flex-direction: column; justify-content: flex-start; align-items: stretch; overflow-y: auto;">
+            <div class="stage-container" id="stage" style="margin: 0 auto;">
                 <img id="product-image" src="" alt="Product" style="display: none;">
-                <div id="print-area" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none;">
+                <div id="print-area" style="display: none;">
                     <img id="design-overlay" src="" style="display: none;">
                 </div>
+            </div>
+            
+            <div style="width: 100%; margin-top: auto;">
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.2rem; color: var(--text-main); margin-top: 2rem; display: none;" id="gallery-title">Saved Renders</h3>
+                <div class="gallery-area" id="gallery-area" style="display: none;"></div>
             </div>
         </section>
     </main>
@@ -388,8 +447,31 @@
             prodImage.style.display = 'block';
             
             prodImage.onload = () => {
-                printAreaDiv.style.display = 'block';
-                updateOverlay();
+                // We need to scale the print area coordinates based on the image display size vs actual size.
+                // For simplicity, let's assume the API receives coordinates relative to the original image size.
+                // The visual representation is just for the user.
+                const pa = currentView.print_area;
+                if(pa) {
+                    printAreaDiv.style.display = 'block';
+                    
+                    // We map the raw pixel coordinates to % of the image to keep it responsive
+                    const imgW = prodImage.naturalWidth;
+                    const imgH = prodImage.naturalHeight;
+                    
+                    const leftPct = (pa.x / imgW) * 100;
+                    const topPct = (pa.y / imgH) * 100;
+                    const wPct = (pa.width / imgW) * 100;
+                    const hPct = (pa.height / imgH) * 100;
+
+                    printAreaDiv.style.left = leftPct + '%';
+                    printAreaDiv.style.top = topPct + '%';
+                    printAreaDiv.style.width = wPct + '%';
+                    printAreaDiv.style.height = hPct + '%';
+
+                    updateOverlay();
+                } else {
+                    printAreaDiv.style.display = 'none';
+                }
             };
         }
 
@@ -454,17 +536,21 @@
             document.getElementById('loader').style.display = 'inline-block';
             document.getElementById('btn-text').textContent = 'Rendering...';
             
-            const imgW = prodImage.naturalWidth;
-            const imgH = prodImage.naturalHeight;
+            const pa = currentView.print_area;
             
-            // Assuming 100% size means original design width. Or relative to image width.
-            // Let's make size slider represent % of base image width for better scaling.
-            const targetWidth = Math.floor(imgW * (sizeSlider.value / 100));
+            // Calculate absolute parameters for backend
+            // The overlay is centered in the print area by default.
+            // Original width is 100%. If slider is 50%, target width is 50% of print area width.
+            const targetWidth = Math.floor(pa.width * (sizeSlider.value / 100));
+            // Let's assume aspect ratio is maintained. We just pass targetWidth, and backend can figure out height or we pass both.
+            // We need to calculate height based on original design aspect ratio. We'll just pass target width and height to be safe.
             const aspect = designOverlay.naturalHeight / designOverlay.naturalWidth;
             const targetHeight = Math.floor(targetWidth * aspect);
 
-            const centerX = (imgW / 2) + parseInt(xSlider.value);
-            const centerY = (imgH / 2) + parseInt(ySlider.value);
+            // Backend x, y is top-left in the whole image.
+            // The overlay center is print_area center + xSlider, ySlider
+            const centerX = pa.x + (pa.width / 2) + parseInt(xSlider.value);
+            const centerY = pa.y + (pa.height / 2) + parseInt(ySlider.value);
             
             const finalX = Math.floor(centerX - (targetWidth / 2));
             const finalY = Math.floor(centerY - (targetHeight / 2));
@@ -477,6 +563,7 @@
             formData.append('width', targetWidth);
             formData.append('height', targetHeight);
             formData.append('rotation', rotSlider.value);
+            formData.append('auto_perspective', document.getElementById('auto-perspective').checked);
 
             try {
                 const response = await fetch(API_URL + 'render-preview/', {
@@ -491,6 +578,34 @@
                     // Display result
                     prodImage.src = url;
                     printAreaDiv.style.display = 'none'; // hide the overlay since it's rendered now
+                    
+                    // Add to gallery
+                    document.getElementById('gallery-title').style.display = 'block';
+                    const gallery = document.getElementById('gallery-area');
+                    gallery.style.display = 'flex';
+                    
+                    const item = document.createElement('div');
+                    item.className = 'gallery-item';
+                    
+                    const img = document.createElement('img');
+                    img.src = url;
+                    
+                    const label = document.createElement('span');
+                    label.textContent = currentView.view_type.toUpperCase();
+                    label.style.fontSize = '0.9rem';
+                    label.style.fontWeight = '600';
+                    label.style.color = 'var(--text-main)';
+                    
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `rendered_${currentProduct.name}_${currentView.view_type}.png`.replace(/\s+/g, '_');
+                    a.className = 'download-btn';
+                    a.textContent = 'Download';
+                    
+                    item.appendChild(img);
+                    item.appendChild(label);
+                    item.appendChild(a);
+                    gallery.appendChild(item);
                 } else {
                     const err = await response.json();
                     alert("Error: " + (err.error || "Failed to render"));

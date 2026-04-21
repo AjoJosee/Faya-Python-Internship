@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Product, ProductView
+from .models import Product, ProductView, PrintArea
+
+class PrintAreaInline(admin.StackedInline):
+    model = PrintArea
 
 class ProductViewInline(admin.TabularInline):
     model = ProductView
@@ -13,3 +16,8 @@ class ProductAdmin(admin.ModelAdmin):
 @admin.register(ProductView)
 class ProductViewAdmin(admin.ModelAdmin):
     list_display = ('product', 'view_type')
+    inlines = [PrintAreaInline]
+
+@admin.register(PrintArea)
+class PrintAreaAdmin(admin.ModelAdmin):
+    list_display = ('product_view', 'x', 'y', 'width', 'height')

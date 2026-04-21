@@ -26,3 +26,13 @@ class ProductView(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - {self.view_type}"
+
+class PrintArea(models.Model):
+    product_view = models.OneToOneField(ProductView, related_name='print_area', on_delete=models.CASCADE)
+    x = models.IntegerField(help_text="X coordinate of top-left corner")
+    y = models.IntegerField(help_text="Y coordinate of top-left corner")
+    width = models.IntegerField(help_text="Maximum width of the print area")
+    height = models.IntegerField(help_text="Maximum height of the print area")
+
+    def __str__(self):
+        return f"Print Area for {self.product_view}"
