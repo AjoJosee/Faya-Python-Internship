@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Customizer PRO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: hsl(220, 15%, 8%);
+            --panel-bg: hsla(220, 15%, 15%, 0.6);
+            --border-color: hsla(220, 15%, 30%, 0.4);
+            --accent: hsl(260, 100%, 65%);
+            --accent-hover: hsl(260, 100%, 70%);
+            --text-main: hsl(220, 10%, 95%);
+            --text-muted: hsl(220, 10%, 65%);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 10% 20%, hsla(260, 100%, 65%, 0.1) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, hsla(300, 100%, 50%, 0.05) 0%, transparent 40%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 1.5rem 3rem;
+            border-bottom: 1px solid var(--border-color);
+            background: hsla(220, 15%, 8%, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.8rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            padding: 2rem;
+            gap: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            backdrop-filter: blur(16px);
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .tools {
+            width: 350px;
+            flex-shrink: 0;
+        }
+
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h2 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: hsla(220, 15%, 20%, 0.8);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        select:focus {
+            border-color: var(--accent);
+        }
+
+        button {
+            background: var(--accent);
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px hsla(260, 100%, 65%, 0.3);
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px hsla(260, 100%, 65%, 0.5);
+        }
+        
+        button:disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .dropzone {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--accent);
+            background: hsla(260, 100%, 65%, 0.05);
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .slider-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        .stage-container {
+            position: relative;
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        #product-image {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
+
+        #print-area {
+            position: absolute;
+            border: 1px dashed hsla(0, 0%, 100%, 0.4);
+            pointer-events: none;
+            background: hsla(260, 100%, 65%, 0.05);
+        }
+        
+        #design-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 100%;
+            max-height: 100%;
+            pointer-events: none;
+            opacity: 0.8;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .loader {
+            display: none;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top: 3px solid var(--accent);
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Product Customizer</h1>
+        <div style="font-size: 0.9rem; color: var(--text-muted);">Pro Render Engine Active</div>
+    </header>
+
+    <main>
+        <aside class="panel tools">
+            <div class="tool-section">
+                <h2>1. Select Product</h2>
+                <select id="product-select">
+                    <option value="">Loading products...</option>
+                </select>
+                <select id="view-select" style="margin-top: 10px; display: none;">
+                </select>
+            </div>
+
+            <div class="tool-section">
+                <h2>2. Upload Design</h2>
+                <div class="dropzone" id="dropzone">
+                    <p>Click or drag image here</p>
+                    <input type="file" id="file-input" style="display: none;" accept="image/*">
+                </div>
+            </div>
+
+            <div class="tool-section">
+                <h2>3. Adjustments</h2>
+                <div class="slider-group">
+                    <label><span>Size</span> <span id="size-val">100%</span></label>
+                    <input type="range" id="size-slider" min="10" max="200" value="100">
+                </div>
+                <div class="slider-group" style="margin-top: 10px;">
+                    <label><span>Rotation</span> <span id="rot-val">0°</span></label>
+                    <input type="range" id="rot-slider" min="-45" max="45" value="0">
+                </div>
+                <div class="slider-group" style="margin-top: 10px;">
+                    <label><span>X Position</span> <span id="x-val">0</span></label>
+                    <input type="range" id="x-slider" min="-500" max="500" value="0">
+                </div>
+                <div class="slider-group" style="margin-top: 10px;">
+                    <label><span>Y Position</span> <span id="y-val">0</span></label>
+                    <input type="range" id="y-slider" min="-500" max="500" value="0">
+                </div>
+            </div>
+
+            <button id="render-btn" disabled>
+                <div class="loader" id="loader"></div>
+                <span id="btn-text">Generate Render</span>
+            </button>
+        </aside>
+
+        <section class="panel canvas-area">
+            <div class="stage-container" id="stage">
+                <img id="product-image" src="" alt="Product" style="display: none;">
+                <div id="print-area" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none;">
+                    <img id="design-overlay" src="" style="display: none;">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const API_URL = '/api/';
+        
+        let products = [];
+        let currentProduct = null;
+        let currentView = null;
+        let designFile = null;
+        let designURL = null;
+
+        // Elements
+        const prodSelect = document.getElementById('product-select');
+        const viewSelect = document.getElementById('view-select');
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('file-input');
+        const renderBtn = document.getElementById('render-btn');
+        const prodImage = document.getElementById('product-image');
+        const printAreaDiv = document.getElementById('print-area');
+        const designOverlay = document.getElementById('design-overlay');
+        const stage = document.getElementById('stage');
+        
+        const sizeSlider = document.getElementById('size-slider');
+        const rotSlider = document.getElementById('rot-slider');
+        const xSlider = document.getElementById('x-slider');
+        const ySlider = document.getElementById('y-slider');
+
+        // Fetch products
+        async function loadProducts() {
+            try {
+                const res = await fetch(API_URL + 'products/');
+                products = await res.json();
+                
+                prodSelect.innerHTML = '<option value="">Select a product...</option>';
+                products.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.name;
+                    prodSelect.appendChild(opt);
+                });
+            } catch (e) {
+                console.error(e);
+                prodSelect.innerHTML = '<option value="">Error loading products</option>';
+            }
+        }
+
+        prodSelect.addEventListener('change', (e) => {
+            const pid = parseInt(e.target.value);
+            currentProduct = products.find(p => p.id === pid);
+            if (currentProduct && currentProduct.views.length > 0) {
+                viewSelect.style.display = 'block';
+                viewSelect.innerHTML = '';
+                currentProduct.views.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.id;
+                    opt.textContent = v.view_type.toUpperCase();
+                    viewSelect.appendChild(opt);
+                });
+                viewSelect.dispatchEvent(new Event('change'));
+            } else {
+                viewSelect.style.display = 'none';
+                clearStage();
+            }
+        });
+
+        viewSelect.addEventListener('change', (e) => {
+            const vid = parseInt(e.target.value);
+            currentView = currentProduct.views.find(v => v.id === vid);
+            setupStage();
+            checkReady();
+        });
+
+        function clearStage() {
+            prodImage.style.display = 'none';
+            printAreaDiv.style.display = 'none';
+            currentView = null;
+            checkReady();
+        }
+
+        function setupStage() {
+            if (!currentView) return;
+            prodImage.src = currentView.base_image;
+            prodImage.style.display = 'block';
+            
+            prodImage.onload = () => {
+                printAreaDiv.style.display = 'block';
+                updateOverlay();
+            };
+        }
+
+        // File upload
+        dropzone.addEventListener('click', () => fileInput.click());
+        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            designFile = file;
+            if (designURL) URL.revokeObjectURL(designURL);
+            designURL = URL.createObjectURL(file);
+            designOverlay.src = designURL;
+            designOverlay.style.display = 'block';
+            dropzone.innerHTML = `<p style="color:var(--accent);font-weight:600;">Selected: ${file.name}</p>`;
+            
+            // Reset sliders
+            sizeSlider.value = 100;
+            rotSlider.value = 0;
+            xSlider.value = 0;
+            ySlider.value = 0;
+            updateOverlay();
+            checkReady();
+        }
+
+        // Sliders
+        const updateOverlay = () => {
+            if (!designFile) return;
+            document.getElementById('size-val').textContent = sizeSlider.value + '%';
+            document.getElementById('rot-val').textContent = rotSlider.value + '°';
+            document.getElementById('x-val').textContent = xSlider.value;
+            document.getElementById('y-val').textContent = ySlider.value;
+
+            designOverlay.style.transform = `translate(calc(-50% + ${xSlider.value}px), calc(-50% + ${ySlider.value}px)) scale(${sizeSlider.value / 100}) rotate(${rotSlider.value}deg)`;
+        };
+
+        sizeSlider.addEventListener('input', updateOverlay);
+        rotSlider.addEventListener('input', updateOverlay);
+        xSlider.addEventListener('input', updateOverlay);
+        ySlider.addEventListener('input', updateOverlay);
+
+        function checkReady() {
+            if (currentView && designFile) {
+                renderBtn.disabled = false;
+            } else {
+                renderBtn.disabled = true;
+            }
+        }
+
+        renderBtn.addEventListener('click', async () => {
+            if (!currentView || !designFile) return;
+            
+            renderBtn.disabled = true;
+            document.getElementById('loader').style.display = 'inline-block';
+            document.getElementById('btn-text').textContent = 'Rendering...';
+            
+            const imgW = prodImage.naturalWidth;
+            const imgH = prodImage.naturalHeight;
+            
+            // Assuming 100% size means original design width. Or relative to image width.
+            // Let's make size slider represent % of base image width for better scaling.
+            const targetWidth = Math.floor(imgW * (sizeSlider.value / 100));
+            const aspect = designOverlay.naturalHeight / designOverlay.naturalWidth;
+            const targetHeight = Math.floor(targetWidth * aspect);
+
+            const centerX = (imgW / 2) + parseInt(xSlider.value);
+            const centerY = (imgH / 2) + parseInt(ySlider.value);
+            
+            const finalX = Math.floor(centerX - (targetWidth / 2));
+            const finalY = Math.floor(centerY - (targetHeight / 2));
+
+            const formData = new FormData();
+            formData.append('product_view_id', currentView.id);
+            formData.append('design', designFile);
+            formData.append('x', finalX);
+            formData.append('y', finalY);
+            formData.append('width', targetWidth);
+            formData.append('height', targetHeight);
+            formData.append('rotation', rotSlider.value);
+
+            try {
+                const response = await fetch(API_URL + 'render-preview/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    
+                    // Display result
+                    prodImage.src = url;
+                    printAreaDiv.style.display = 'none'; // hide the overlay since it's rendered now
+                } else {
+                    const err = await response.json();
+                    alert("Error: " + (err.error || "Failed to render"));
+                }
+            } catch(e) {
+                console.error(e);
+                alert("Network error occurred.");
+            } finally {
+                renderBtn.disabled = false;
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('btn-text').textContent = 'Generate Render';
+            }
+        });
+
+        // Init
+        loadProducts();
+
+    </script>
+</body>
+</html>
