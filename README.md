@@ -43,6 +43,24 @@ When the backend receives the design and coordinates, it passes them to our cust
 
 ---
 
+## 🔐 Authentication & Authorization
+
+The system enforces a strict separation of privileges using Django's built-in security features and Django REST Framework (DRF):
+
+### 1. Admin Authorization (Session-Based)
+The backend dashboard (`/admin`) is completely locked down. It utilizes **Django's Session Authentication**. 
+* Only users with `is_staff` and `is_superuser` flags in the database can access this portal. 
+* This ensures that only authorized store owners can add products, delete products, or modify the critical `PrintArea` coordinate boundaries.
+* It is protected by CSRF (Cross-Site Request Forgery) tokens to prevent malicious hijacking.
+
+### 2. End-User Access (Public & Stateless)
+The customer-facing application is designed for a frictionless experience. 
+* Customers **do not** need to create an account or log in to test designs on shirts.
+* The API endpoint responsible for generating the images (`/api/render-preview/`) is explicitly configured in DRF to be public (`authentication_classes = []`, `permission_classes = []`).
+* Because the image generation is a stateless operation (it takes an image, processes it, returns it, and immediately forgets it without saving it to the database), keeping this endpoint public is perfectly secure and removes unnecessary friction for the customer.
+
+---
+
 ## 🚀 Quick Setup Guide
 
 If you want to run this project on your own computer, follow these simple steps!
